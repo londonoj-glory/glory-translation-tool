@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Mejoras de Grabación</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .test-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+        }
+        h1 {
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+        .record-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px 0;
+        }
+        .record-btn {
+            background: #f44336;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            width: 120px;
+            height: 120px;
+            font-size: 2em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .record-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 25px rgba(0,0,0,0.4);
+        }
+        .record-btn.recording {
+            background: #FF5722;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .status {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin: 20px 0;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .transcript {
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            min-height: 100px;
+            text-align: left;
+            font-family: monospace;
+        }
+        .tips {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            font-size: 0.9em;
+        }
+        .tip {
+            margin: 5px 0;
+            padding: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🎤 Test de Grabación Mejorada</h1>
+        
+        <div class="record-section">
+            <button id="recordBtn" class="record-btn">🎤</button>
+            <div id="status" class="status">Listo para grabar</div>
+            
+            <div class="transcript">
+                <strong>Transcripción:</strong>
+                <div id="transcript">Aquí aparecerá lo que digas...</div>
+            </div>
+        </div>
+        
+        <div class="tips">
+            <h3>🎯 Consejos para Probar:</h3>
+            <div class="tip">🎤 Habla claramente: "Hola, esta es una prueba de grabación"</div>
+            <div class="tip">⏸️ Haz una pausa y continúa: "Ahora voy a hacer una pausa..."</div>
+            <div class="tip">🔇 Prueba el silencio para ver cómo maneja la espera</div>
+            <div class="tip">🗣️ Habla a diferentes velocidades y volúmenes</div>
+        </div>
+        
+        <div id="tips-display" class="tips" style="display: none;">
+            <strong>💡 Consejo automático:</strong>
+            <div id="current-tip"></div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        let recognition;
+        let isRecording = false;
+        let finalTranscript = '';
+        let interimTranscript = '';
+        
+        // Elementos DOM
+        const recordBtn = document.getElementById('recordBtn');
+        const statusDiv = document.getElementById('status');
+        const transcriptDiv = document.getElementById('transcript');
+        const tipsDisplay = document.getElementById('tips-display');
+        const currentTip = document.getElementById('current-tip');
+        
+        // Consejos de grabación
+        const recordingTips = [
+            "🎤 Habla claramente y a velocidad normal",
+            "📱 Mantén el dispositivo cerca de tu boca",
+            "🔇 Evita ruidos de fondo y ecos",
+            "⏸️ Haz pausas breves entre frases",
+            "🗣️ Pronuncia las palabras completamente"
+        ];
+
+        // Inicializar reconocimiento de voz
+        function initSpeechRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            
+            if (!SpeechRecognition) {
+                statusDiv.textContent = '❌ Tu navegador no soporta reconocimiento de voz';
+                return false;
+            }
+
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.maxAlternatives = 3;
+            recognition.lang = 'es-ES';
+
+            // Configuraciones específicas para WebKit
+            if ('webkitSpeechRecognition' in window) {
+                recognition.webkitContinuous = true;
+                recognition.webkitInterimResults = true;
+            }
+
+            // Eventos
+            recognition.onstart = () => {
+                statusDiv.textContent = '🎤 Reconocimiento activado - Esperando voz...';
+            };
+
+            recognition.onresult = (event) => {
+                interimTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalTranscript += transcript + ' ';
+                        statusDiv.textContent = '✅ Texto reconocido';
+                    } else {
+                        interimTranscript += transcript;
+                        statusDiv.textContent = '🎤 Escuchando...';
+                    }
+                }
+                updateTranscript();
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Error de reconocimiento:', event.error);
+                switch (event.error) {
+                    case 'no-speech':
+                        statusDiv.textContent = '🎤 Esperando tu voz... Habla más cerca del micrófono';
+                        setTimeout(() => {
+                            if (isRecording) {
+                                try {
+                                    recognition.start();
+                                } catch (e) {
+                                    console.log('Error al reiniciar:', e);
+                                }
+                            }
+                        }, 1000);
+                        break;
+                    case 'not-allowed':
+                        statusDiv.textContent = '❌ Permiso de micrófono denegado';
+                        stopRecording();
+                        break;
+                    default:
+                        statusDiv.textContent = `❌ Error: ${event.error}`;
+                }
+            };
+
+            recognition.onend = () => {
+                if (isRecording) {
+                    setTimeout(() => {
+                        if (isRecording) {
+                            try {
+                                recognition.start();
+                            } catch (e) {
+                                console.log('Error al reiniciar reconocimiento:', e);
+                            }
+                        }
+                    }, 200);
+                }
+            };
+
+            return true;
+        }
+
+        // Actualizar transcripción
+        function updateTranscript() {
+            const fullText = finalTranscript + interimTranscript;
+            transcriptDiv.innerHTML = fullText || 'Aquí aparecerá lo que digas...';
+        }
+
+        // Mostrar countdown
+        async function showCountdown() {
+            const countdownTexts = ['Preparándose...', '3', '2', '1', '¡Habla ahora!'];
+            
+            for (let i = 0; i < countdownTexts.length; i++) {
+                statusDiv.textContent = countdownTexts[i];
+                statusDiv.style.fontSize = i > 0 && i < 4 ? '1.8em' : '1.3em';
+                statusDiv.style.fontWeight = i > 0 && i < 4 ? 'bold' : 'normal';
+                statusDiv.style.color = i === 4 ? '#4CAF50' : '';
+                
+                await delay(i === 0 ? 1000 : i === 4 ? 500 : 800);
+            }
+            
+            // Restaurar estilos
+            statusDiv.style.fontSize = '';
+            statusDiv.style.fontWeight = '';
+            statusDiv.style.color = '';
+        }
+
+        // Delay helper
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Mostrar consejo aleatorio
+        function showRandomTip() {
+            const randomTip = recordingTips[Math.floor(Math.random() * recordingTips.length)];
+            currentTip.textContent = randomTip;
+            tipsDisplay.style.display = 'block';
+            
+            setTimeout(() => {
+                tipsDisplay.style.display = 'none';
+            }, 4000);
+        }
+
+        // Iniciar grabación
+        async function startRecording() {
+            if (!recognition) {
+                if (!initSpeechRecognition()) return;
+            }
+
+            // Mostrar countdown
+            await showCountdown();
+            
+            isRecording = true;
+            finalTranscript = '';
+            interimTranscript = '';
+            
+            recordBtn.classList.add('recording');
+            recordBtn.textContent = '⏹️';
+            
+            // Esperar estabilización
+            await delay(500);
+            
+            try {
+                recognition.start();
+                statusDiv.textContent = '🎤 Grabando... Habla claramente';
+                
+                // Mostrar consejo después de 3 segundos
+                setTimeout(() => {
+                    if (isRecording) {
+                        showRandomTip();
+                    }
+                }, 3000);
+                
+            } catch (error) {
+                console.error('Error al iniciar grabación:', error);
+                statusDiv.textContent = '❌ Error al iniciar grabación';
+                stopRecording();
+            }
+        }
+
+        // Detener grabación
+        function stopRecording() {
+            isRecording = false;
+            recordBtn.classList.remove('recording');
+            recordBtn.textContent = '🎤';
+            
+            if (recognition) {
+                recognition.stop();
+            }
+            
+            const fullText = (finalTranscript + interimTranscript).trim();
+            if (fullText) {
+                statusDiv.textContent = '✅ Grabación completada';
+            } else {
+                statusDiv.textContent = '❌ No se detectó audio - Intenta nuevamente';
+                showRandomTip();
+            }
+        }
+
+        // Event listeners
+        recordBtn.addEventListener('click', () => {
+            if (!isRecording) {
+                startRecording();
+            } else {
+                stopRecording();
+            }
+        });
+
+        // Inicializar
+        if (!initSpeechRecognition()) {
+            recordBtn.disabled = true;
+        }
+    </script>
+</body>
+</html>

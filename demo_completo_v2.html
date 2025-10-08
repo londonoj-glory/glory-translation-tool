@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo Completo - Traductor de Voz v2.0</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .demo-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+
+        .version-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            backdrop-filter: blur(10px);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .feature-badge {
+            background: rgba(255,255,255,0.1);
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            text-align: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .main-content {
+            padding: 40px;
+        }
+
+        .demo-section {
+            margin-bottom: 40px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border-left: 5px solid #667eea;
+        }
+
+        .demo-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .permissions-status {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+
+        .permissions-granted {
+            background: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .controls-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .control-group {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .control-group h3 {
+            margin-bottom: 15px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .language-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .language-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            background: white;
+            transition: border-color 0.3s;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .recording-controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 140px;
+            justify-content: center;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .btn-record {
+            background: linear-gradient(45deg, #ff4757, #ff3838);
+            color: white;
+        }
+
+        .btn-record:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(255, 71, 87, 0.3);
+        }
+
+        .btn-stop {
+            background: linear-gradient(45deg, #747d8c, #57606f);
+            color: white;
+        }
+
+        .btn-stop:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(116, 125, 140, 0.3);
+        }
+
+        .btn-audio {
+            background: linear-gradient(45deg, #5352ed, #3742fa);
+            color: white;
+        }
+
+        .btn-audio:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(83, 82, 237, 0.3);
+        }
+
+        .status-indicator {
+            text-align: center;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .status-ready {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+
+        .status-recording {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+            animation: pulse 2s infinite;
+        }
+
+        .status-processing {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 2px solid #bee5eb;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.02); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .results-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .results-section {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .result-box {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            border: 2px solid #e0e0e0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .result-box h3 {
+            margin-bottom: 20px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.3rem;
+        }
+
+        .result-text {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #555;
+            min-height: 120px;
+            max-height: 250px;
+            overflow-y: auto;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .final-text {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .interim-text {
+            opacity: 0.7;
+            font-style: italic;
+            color: #666;
+        }
+
+        .audio-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .keyboard-shortcuts {
+            background: #e3f2fd;
+            border: 1px solid #90caf9;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+
+        .keyboard-shortcuts h4 {
+            color: #1565c0;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .shortcuts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+
+        .shortcut-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: white;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        .shortcut-key {
+            background: #f5f5f5;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            border: 1px solid #ddd;
+        }
+
+        .stats-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            border: 2px solid #e0e0e0;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .footer {
+            background: #f8f9fa;
+            padding: 30px;
+            text-align: center;
+            border-top: 1px solid #e0e0e0;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="header">
+            <h1>🎙️ Traductor de Voz <span class="version-badge">v2.0</span></h1>
+            <p>Transcripción y traducción en tiempo real - Sin límites, sin interrupciones</p>
+            
+            <div class="features-grid">
+                <div class="feature-badge">✅ Permisos una sola vez</div>
+                <div class="feature-badge">🎤 Grabación continua</div>
+                <div class="feature-badge">⚡ Tiempo real</div>
+                <div class="feature-badge">🎮 Control total</div>
+                <div class="feature-badge">🌍 Multi-idioma</div>
+                <div class="feature-badge">🔊 Audio avanzado</div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- Estado de permisos -->
+            <div id="permissions-status" class="permissions-status">
+                <strong>🔄 Inicializando permisos de micrófono...</strong>
+                <p>Los permisos se solicitarán una sola vez para toda la sesión</p>
+            </div>
+
+            <!-- Sección de configuración -->
+            <div class="demo-section">
+                <h2>⚙️ Configuración</h2>
+                
+                <div class="controls-grid">
+                    <div class="control-group">
+                        <h3>🗣️ Configuración de Idiomas</h3>
+                        <div class="language-controls">
+                            <div class="language-group">
+                                <label for="source-language">Idioma de origen:</label>
+                                <select id="source-language">
+                                    <option value="es-ES">🇪🇸 Español (España)</option>
+                                    <option value="es-MX">🇲🇽 Español (México)</option>
+                                    <option value="es-AR">🇦🇷 Español (Argentina)</option>
+                                    <option value="en-US">🇺🇸 Inglés (Estados Unidos)</option>
+                                    <option value="en-GB">🇬🇧 Inglés (Reino Unido)</option>
+                                    <option value="fr-FR">🇫🇷 Francés</option>
+                                    <option value="de-DE">🇩🇪 Alemán</option>
+                                    <option value="it-IT">🇮🇹 Italiano</option>
+                                    <option value="pt-BR">🇧🇷 Portugués (Brasil)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="language-group">
+                                <label for="target-language">Traducir a:</label>
+                                <select id="target-language">
+                                    <option value="en">🇺🇸 Inglés</option>
+                                    <option value="es">🇪🇸 Español</option>
+                                    <option value="fr">🇫🇷 Francés</option>
+                                    <option value="de">🇩🇪 Alemán</option>
+                                    <option value="it">🇮🇹 Italiano</option>
+                                    <option value="pt">🇧🇷 Portugués</option>
+                                    <option value="zh">🇨🇳 Chino</option>
+                                    <option value="ja">🇯🇵 Japonés</option>
+                                    <option value="ko">🇰🇷 Coreano</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <h3>🔊 Configuración de Voz</h3>
+                        <div class="language-group">
+                            <label for="voice-select">Variante de voz:</label>
+                            <select id="voice-select">
+                                <option value="">Voz por defecto del sistema</option>
+                            </select>
+                        </div>
+                        <p style="margin-top: 10px; font-size: 0.9rem; color: #666;">
+                            Las voces disponibles se actualizan según el idioma de destino seleccionado
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección de grabación -->
+            <div class="demo-section">
+                <h2>🎙️ Grabación y Control</h2>
+                
+                <div class="recording-controls">
+                    <button id="start-recording" class="btn btn-record" disabled>
+                        🎙️ Iniciar Grabación
+                    </button>
+                    <button id="stop-recording" class="btn btn-stop" disabled>
+                        ⏹️ Detener Grabación
+                    </button>
+                </div>
+
+                <!-- Indicador de estado -->
+                <div id="status-indicator" class="status-indicator status-ready">
+                    🔄 Preparando sistema...
+                </div>
+
+                <!-- Controles de audio -->
+                <div class="audio-controls">
+                    <button id="play-translation" class="btn btn-audio" disabled>
+                        ▶️ Reproducir
+                    </button>
+                    <button id="pause-audio" class="btn btn-audio" disabled>
+                        ⏸️ Pausar
+                    </button>
+                    <button id="resume-audio" class="btn btn-audio" disabled>
+                        ▶️ Continuar
+                    </button>
+                    <button id="stop-audio" class="btn btn-audio" disabled>
+                        ⏹️ Detener
+                    </button>
+                </div>
+            </div>
+
+            <!-- Resultados en tiempo real -->
+            <div class="demo-section">
+                <h2>📊 Resultados en Tiempo Real</h2>
+                
+                <div class="results-section">
+                    <div class="result-box">
+                        <h3>🎤 Transcripción</h3>
+                        <div id="transcription-result" class="result-text">
+                            <em>La transcripción aparecerá aquí en tiempo real mientras hablas...</em>
+                        </div>
+                    </div>
+
+                    <div class="result-box">
+                        <h3>🌐 Traducción</h3>
+                        <div id="translation-result" class="result-text">
+                            <em>La traducción se generará automáticamente...</em>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Atajos de teclado -->
+            <div class="keyboard-shortcuts">
+                <h4>⌨️ Atajos de Teclado</h4>
+                <div class="shortcuts-grid">
+                    <div class="shortcut-item">
+                        <span>Iniciar/Detener Grabación</span>
+                        <span class="shortcut-key">Ctrl + R</span>
+                    </div>
+                    <div class="shortcut-item">
+                        <span>Reproducir/Pausar Audio</span>
+                        <span class="shortcut-key">Ctrl + Espacio</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estadísticas de sesión -->
+            <div class="demo-section">
+                <h2>📈 Estadísticas de Sesión</h2>
+                <div class="stats-section">
+                    <div class="stat-card">
+                        <div class="stat-number" id="session-recordings">0</div>
+                        <div class="stat-label">Grabaciones</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="session-duration">0s</div>
+                        <div class="stat-label">Tiempo Total</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="words-transcribed">0</div>
+                        <div class="stat-label">Palabras</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="languages-used">1</div>
+                        <div class="stat-label">Idiomas</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p><strong>Traductor de Voz v2.0</strong> - Desarrollado por MiniMax Agent</p>
+            <p>Tecnologías: Web Speech API, SpeechSynthesis API, JavaScript ES6+</p>
+        </div>
+    </div>
+
+    <script src="script_v2_enhanced.js"></script>
+</body>
+</html>
